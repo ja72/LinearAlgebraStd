@@ -53,10 +53,10 @@ namespace JA.Numerics.Geometry
         /// <summary>The distance of the plane along its normal from the origin.</summary>
         public double D => data.d;
 
-        public bool IsFinite => data.normal.LengthSquared()>0;
+        public bool IsFinite => data.normal.SumSquares()>0;
 
         /// <summary>The position vector of the point on the plane closest to the origin.</summary>
-        public Vector3 Position => data.d * data.normal/data.normal.LengthSquared();
+        public Vector3 Position => data.d * data.normal/data.normal.SumSquares();
 
         /// <summary>Creates a <see cref="T:System.Numerics.Plane" /> object that contains three specified points.</summary>
         /// <param name="point1">The first point defining the plane.</param>
@@ -80,7 +80,7 @@ namespace JA.Numerics.Geometry
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plane3 Normalize(Plane3 value)
         {
-            double num = value.Vector.LengthSquared();
+            double num = value.Vector.SumSquares();
             const double tolsq = 1.1920929E-07f;
             if (Math.Abs(num - 1f) < tolsq)
             {
@@ -269,10 +269,10 @@ namespace JA.Numerics.Geometry
         public Point3 Center 
             => new Point3(
                 -data.d*data.normal, 
-                data.normal.LengthSquared());
+                data.normal.SumSquares());
 
         public double Distance
-            => Abs(D)/Vector.Length();
+            => Abs(D)/Vector.Magnitude();
 
         public static Plane3 FromThreePoints(Point3 A, Point3 B, Point3 C)
         {
@@ -295,7 +295,7 @@ namespace JA.Numerics.Geometry
         public static Plane3 FromLineAwayFromOrigin(Line3 line)
             => new Plane3(
                 Vector3.Cross(line.Moment, line.Vector), 
-                line.Moment.LengthSquared());
+                line.Moment.SumSquares());
 
         public static Plane3 FromPointAwayFromOrigin(Point3 point)
             => new Plane3(
@@ -303,7 +303,7 @@ namespace JA.Numerics.Geometry
 
         public double DistanceTo(Point3 point)
             => Abs(Vector3.Dot(Vector, point.Vector) + D*point.W)
-            /(point.W*Vector).Length();
+            /(point.W*Vector).Magnitude();
 
         public double DistanceTo(Line3 line) => line.DistanceTo(this);
 

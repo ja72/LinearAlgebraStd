@@ -9,26 +9,23 @@ using System.Threading.Tasks;
 namespace JA.Numerics
 {
     /// <summary>Represents a vector with three  single-precision floating-point values.</summary>
-    public struct Vector3 : 
+    public readonly struct Vector3 : 
         IEquatable<Vector3>, 
         IReadOnlyList<double>,
         ICollection<double>,
         System.Collections.ICollection,
         IFormattable
     {
-        /// <summary>The X component of the vector.</summary>
-        readonly double _x;
-        /// <summary>The Y component of the vector.</summary>
-        readonly double _y;
-        /// <summary>The Z component of the vector.</summary>
-        readonly double _z;
+
+        readonly (double x, double y, double z) data;
 
         #region Factory
         /// <summary>Creates a new <see cref="T:System.Numerics.Vector3" /> object whose three elements have the same value.</summary>
         /// <param name="value">The value to assign to all three elements.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3(double value)
         {
-            this = new Vector3(value, value, value);
+            data = (value, value, value);
         }
 
         /// <summary>Creates a   new <see cref="T:System.Numerics.Vector3" /> object from the specified <see cref="T:System.Numerics.Vector2" /> object and the specified value.</summary>
@@ -36,18 +33,16 @@ namespace JA.Numerics
         /// <param name="z">The additional value to assign to the <see cref="F:System.Numerics.Vector3.Z" /> field.</param>
         public Vector3(Vector2 value, double z)
         {
-            this = new Vector3(value.X, value.Y, z);
+            data = (value.X, value.Y, z);
         }
 
         /// <summary>Creates a vector whose elements have the specified values.</summary>
         /// <param name="x">The value to assign to the <see cref="F:System.Numerics.Vector3.X" /> field.</param>
         /// <param name="y">The value to assign to the <see cref="F:System.Numerics.Vector3.Y" /> field.</param>
         /// <param name="z">The value to assign to the <see cref="F:System.Numerics.Vector3.Z" /> field.</param>
-        public Vector3(double x, double y, double z)
+        public Vector3(double x, double y, double z) : this()
         {
-            _x = x;
-            _y = y;
-            _z = z;
+            data = (x, y, z);
         }
 
         /// <summary>Gets a vector whose 3 elements are equal to zero.</summary>
@@ -75,45 +70,40 @@ namespace JA.Numerics
         public static explicit operator System.Numerics.Vector3(Vector3 vector)
             => new System.Numerics.Vector3((float)vector.X, (float)vector.Y, (float)vector.Z);
 
-        static readonly Random rng = new Random();
-
         public static Vector3 Random(double minValue = 0, double maxValue = 1)
             => new Vector3(
-                minValue + (maxValue-minValue) * rng.NextDouble(),
-                minValue + (maxValue-minValue) * rng.NextDouble(),
-                minValue + (maxValue-minValue) * rng.NextDouble());
+                minValue + (maxValue-minValue) * LinearAlgebra.RandomNumberGenerator.NextDouble(),
+                minValue + (maxValue-minValue) * LinearAlgebra.RandomNumberGenerator.NextDouble(),
+                minValue + (maxValue-minValue) * LinearAlgebra.RandomNumberGenerator.NextDouble());
 
         #endregion
 
         #region Properties
         /// <summary>The X component of the vector.</summary>		
-        public double X => _x;
+        public double X => data.x;
         /// <summary>The Y component of the vector.</summary>
-        public double Y => _y;
+        public double Y => data.y;
         /// <summary>The Z component of the vector.</summary>
-        public double Z => _z;
-
-        public bool IsZero => _x ==0 && _y == 0 && _z == 0;
-
-        #endregion
-
-        #region Algebra
-        /// <summary>Returns the length of this vector object.</summary>
-        /// <returns>The vector's length.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public double Length()
-        {
-            double num = Dot(this, this);
-            return Math.Sqrt(num);
-        }
+        public double Z => data.z;
 
         /// <summary>Returns the length of the vector squared.</summary>
         /// <returns>The vector's length squared.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public double LengthSquared()
+        public double SumSquares() => data.x * data.x + data.y * data.y + data.z*data.z;
+        /// <summary>Returns the length of this vector object.</summary>
+        /// <returns>The vector's length.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public double Magnitude() => Math.Sqrt(SumSquares());
+
+        public bool IsZero => data.x ==0 && data.y == 0 && data.z == 0;
+
+        public void Deconstruct(out double x, out double y, out double z)
         {
-            return Dot(this, this);
+            (x, y, z) = data;
         }
+        #endregion
+
+        #region Algebra
 
         /// <summary>Computes the Euclidean distance between the two given points.</summary>
         /// <param name="value1">The first point.</param>
@@ -144,9 +134,17 @@ namespace JA.Numerics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 Normalize(Vector3 value)
         {
-            double value2 = value.Length();
-            return value / value2;
+            double m = value.Magnitude();
+            return value / m;
         }
+
+        /// <summary>
+        /// Get the direction vector between two points.
+        /// </summary>
+        /// <param name="fromPoint">From point.</param>
+        /// <param name="toPoint">To point.</param>
+        public static Vector3 Direction(Vector3 fromPoint, Vector3 toPoint)
+            => Normalize(toPoint-fromPoint);
 
         /// <summary>Computes the cross product of two vectors.</summary>
         /// <param name="vector1">The first vector.</param>
@@ -231,6 +229,9 @@ namespace JA.Numerics
                 value.X * (num9 - num5) + value.Y * (num11 + num4) + value.Z * (1 - num7 - num10));
         }
 
+        public static Vector3 Transform(Vector3 value, Matrix3 transform)
+            => value * transform;
+
         /// <summary>Adds two vectors together.</summary>
         /// <param name="left">The first vector to add.</param>
         /// <param name="right">The second vector to add.</param>
@@ -314,10 +315,8 @@ namespace JA.Numerics
         /// <param name="vector2">The second vector.</param>
         /// <returns>The dot product.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double Dot(Vector3 vector1, Vector3 vector2)
-        {
-            return vector1.X * vector2.X + vector1.Y * vector2.Y + vector1.Z * vector2.Z;
-        }
+        public static double Dot(Vector3 vector1, Vector3 vector2) 
+            => vector1.data.x * vector2.data.x + vector1.data.y * vector2.data.y + vector1.data.z * vector2.data.z;
 
         /// <summary>Returns a vector whose elements are the minimum of each of the pairs of elements in two specified vectors.</summary>
         /// <param name="value1">The first vector.</param>
@@ -437,9 +436,7 @@ namespace JA.Numerics
         public override int GetHashCode()
         {
             var hashCode = -307843816;
-            hashCode=hashCode*-1521134295+X.GetHashCode();
-            hashCode=hashCode*-1521134295+Y.GetHashCode();
-            hashCode=hashCode*-1521134295+Z.GetHashCode();
+            hashCode=hashCode*-1521134295+data.GetHashCode();
             return hashCode;
         }
 
@@ -463,7 +460,7 @@ namespace JA.Numerics
         ///   <see langword="true" /> if the two vectors are equal; otherwise, <see langword="false" />.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(Vector3 vector)
-            => _x==vector._x && _y == vector._y && _z==vector._z;
+            => data.x==vector.data.x && data.y == vector.data.y && data.z==vector.data.z;
 
         /// <summary>Returns a value that indicates whether each pair of elements in two specified vectors is equal.</summary>
         /// <param name="left">The first vector to compare.</param>
@@ -522,7 +519,13 @@ namespace JA.Numerics
 
         #region ICollection
 
+        /// <summary>
+        /// Gets a value indicating whether this array is of fixed size.
+        /// </summary>
         public bool IsReadOnly => true;
+        /// <summary>
+        /// Get the number of elements in the vector.
+        /// </summary>
         public int Count => 3;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double[] ToArray()
@@ -535,9 +538,9 @@ namespace JA.Numerics
             {
                 switch (index)
                 {
-                    case 0: return _x;
-                    case 1: return _y;
-                    case 2: return _z;
+                    case 0: return data.x;
+                    case 1: return data.y;
+                    case 2: return data.z;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(index));
                 }
@@ -545,12 +548,11 @@ namespace JA.Numerics
         }
         public unsafe ReadOnlySpan<double> AsSpan()
         {
-            fixed (double* ptr = &_x)
+            fixed (double* ptr = &data.x)
             {
                 return new ReadOnlySpan<double>(ptr, 3);
             }
         }
-        public bool Contains(double item) => throw new NotSupportedException();
         /// <summary>Copies the elements of the vector to a specified array starting at a specified index position.</summary>
         /// <param name="array">The destination array.</param>
         /// <param name="index">The index at which to copy the first element of the vector.</param>
@@ -563,18 +565,19 @@ namespace JA.Numerics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CopyTo(Array array, int index) 
             => ToArray().CopyTo(array, index);
+        public IEnumerator<double> GetEnumerator()
+        {
+            yield return data.x;
+            yield return data.y;
+            yield return data.z;
+        }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
         bool System.Collections.ICollection.IsSynchronized => false;
         object System.Collections.ICollection.SyncRoot => new NotSupportedException();
         void ICollection<double>.Add(double item) => throw new NotSupportedException();
         void ICollection<double>.Clear() => throw new NotSupportedException();
         bool ICollection<double>.Remove(double item) => throw new NotSupportedException();
-        public IEnumerator<double> GetEnumerator()
-        {
-            yield return _x;
-            yield return _y;
-            yield return _z;
-        }
+        bool ICollection<double>.Contains(double item) => throw new NotSupportedException();
         #endregion
     }
 

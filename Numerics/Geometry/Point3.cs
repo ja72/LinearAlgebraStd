@@ -246,7 +246,7 @@ namespace JA.Numerics.Geometry
         }
 
         public double Distance
-            => Vector.Length()/Abs(W);
+            => Vector.Magnitude()/Abs(W);
 
         public static Point3 FromLineAndPlane(Line3 line, Plane3 plane)
             => new Point3(
@@ -255,7 +255,7 @@ namespace JA.Numerics.Geometry
 
         public double DistanceTo(Plane3 plane)
             => Abs(Vector3.Dot(plane.Vector, Vector) + plane.D*W)
-            /(W*plane.Vector).Length();
+            /(W*plane.Vector).Magnitude();
 
         public double DistanceTo(Line3 line) => line.DistanceTo(this);
 

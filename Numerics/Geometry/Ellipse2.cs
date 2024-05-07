@@ -64,7 +64,7 @@ namespace JA.Numerics.Geometry
         public Point2 GetClosestPoint(Line2 line, double tol)
         {
             var (a, b, c)= line.Coords;
-            var (cx, cy) = Center.AsVector().Coords;
+            var (cx, cy) = Center.AsVector();
             // transform line coords to being relative to ellipse center
             c -= -a*cx - b*cy;
             double rx = MajorAxis, ry = MinorAxis;

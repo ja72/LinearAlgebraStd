@@ -26,7 +26,7 @@ namespace JA.Numerics.Geometry
 
         public Vector3 Vector => data.direction;
         public Vector3 Moment => data.moment;
-        public bool IsFinite => Vector.LengthSquared() > 0;
+        public bool IsFinite => Vector.SumSquares() > 0;
 
         public Vector3 Direction => Vector3.Normalize(Vector);
 
@@ -36,7 +36,7 @@ namespace JA.Numerics.Geometry
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Line3 Normalize(Line3 value)
         {
-            var num = value.Vector.LengthSquared();
+            var num = value.Vector.SumSquares();
             const double tolsq = 1.1920929E-07;
             if (Math.Abs(num - 1) < tolsq)
             {
@@ -158,10 +158,10 @@ namespace JA.Numerics.Geometry
         public Point3 Center 
             => new Point3(
                 Vector3.Cross(Vector, Moment), 
-                Vector.LengthSquared());
+                Vector.SumSquares());
 
         public double Distance
-            => Moment.Length()/ Vector.Length();
+            => Moment.Magnitude()/ Vector.Magnitude();
 
         public static Line3 FromPointAndDirection(Point3 point, Vector3 direction)
             => new Line3(
@@ -182,16 +182,16 @@ namespace JA.Numerics.Geometry
                 plane1.D*plane2.Vector - plane2.D * plane1.Vector);
 
         public double DistanceTo(Point3 point)
-            => (Vector3.Cross(Vector, point.Vector)+point.W*Moment).Length()
-            /(point.W*Vector).Length();
+            => (Vector3.Cross(Vector, point.Vector)+point.W*Moment).Magnitude()
+            /(point.W*Vector).Magnitude();
 
         public double DistanceTo(Plane3 plane)
-            => (Vector3.Cross(Vector, plane.Vector)+plane.D*Moment).Length()
-            /(plane.D*Vector).Length();
+            => (Vector3.Cross(Vector, plane.Vector)+plane.D*Moment).Magnitude()
+            /(plane.D*Vector).Magnitude();
 
         public double DistanceTo(Line3 line)
             => Abs(Vector3.Dot(Vector, line.Moment) + Vector3.Dot(Moment, line.Vector))
-            /Vector3.Cross(Vector, line.Vector).Length();
+            /Vector3.Cross(Vector, line.Vector).Magnitude();
 
         #endregion
 
@@ -219,10 +219,10 @@ namespace JA.Numerics.Geometry
             => Plane3.FromLineAndDirection(line, direction);
 
         public static double operator * (Line3 line, Point3 point)
-            => (Vector3.Cross(line.Vector, point.Vector)+point.W*line.Moment).Length();
+            => (Vector3.Cross(line.Vector, point.Vector)+point.W*line.Moment).Magnitude();
 
         public static double operator * (Line3 line, Plane3 plane)
-            => (Vector3.Cross(line.Vector, plane.Vector)+plane.D*line.Moment).Length();
+            => (Vector3.Cross(line.Vector, plane.Vector)+plane.D*line.Moment).Magnitude();
 
         #endregion
 

@@ -14,7 +14,12 @@ namespace JA.Numerics
     {
         readonly (double x, double y) data;
 
-        public Vector2(double x, double y) => data = (x, y);
+        #region Factory
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector2(double x, double y)
+        {
+            data = (x, y);
+        }
 
         public static implicit operator Vector2(System.Numerics.Vector2 vector)
             => new Vector2(vector.X, vector.Y);
@@ -27,28 +32,38 @@ namespace JA.Numerics
         public static Vector2 One { get; } = new Vector2(1, 1);
 
         public static Vector2 Cartesian(double x, double y) => new Vector2(x, y);
-        public static Vector2 Polar(double r, double θ) 
+        public static Vector2 Polar(double r, double θ)
             => new Vector2(
             r * Math.Cos(θ),
             r * Math.Sin(θ));
-        public static Vector2 Elliptical(double a, double b, double θ) 
+        public static Vector2 Elliptical(double a, double b, double θ)
             => new Vector2(
             a * Math.Cos(θ),
-            b * Math.Sin(θ));
+            b * Math.Sin(θ)); 
 
-        public (double r, double θ) ToPolar()
-            => (Magnitude(), Math.Atan2(Y, X));
+        public static Vector2 Random(double minValue = 0, double maxValue = 1)
+            => new Vector2(
+                minValue + (maxValue-minValue) * LinearAlgebra.RandomNumberGenerator.NextDouble(),
+                minValue + (maxValue-minValue) * LinearAlgebra.RandomNumberGenerator.NextDouble());
 
+        #endregion
+
+        /// <summary>The X component of the vector.</summary>
         public double X => data.x;
+        /// <summary>The Y component of the vector.</summary>
         public double Y => data.y;
-        public (double x, double y) Coords => data;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double SumSquares() => data.x * data.x + data.y * data.y;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double Magnitude() => Math.Sqrt(SumSquares());
+        public (double r, double θ) ToPolar() => (Magnitude(), Math.Atan2(Y, X));
 
         public bool IsZero { get => data.x == 0 && data.y == 0; }
 
-        public System.Numerics.Vector2 ToSngVector2()
-            => new System.Numerics.Vector2((float)X, (float)Y);
+        public void Deconstruct(out double x, out double y)
+        {
+            (x, y) = data;
+        }
 
         #region Algebra
         public static Vector2 Negate(Vector2 a)
@@ -78,7 +93,6 @@ namespace JA.Numerics
         #endregion
 
         #region Vector Algebra        
-
         /// <summary>
         /// Scale the vector such that the magnitude is one (if possible).
         /// </summary>
@@ -87,12 +101,7 @@ namespace JA.Numerics
         public static Vector2 Normalize(Vector2 vector)
         {
             double m = vector.Magnitude();
-
-            if (m > 0)
-            {
-                return vector/m;
-            }
-            return vector;
+            return vector/m;
         }
 
         /// <summary>
@@ -102,6 +111,16 @@ namespace JA.Numerics
         /// <param name="toPoint">To point.</param>
         public static double Distance(Vector2 fromPoint, Vector2 toPoint)
             => (toPoint-fromPoint).Magnitude();
+
+        /// <summary>
+        /// Calculate the Eucledian distance squared between two points.
+        /// </summary>
+        /// <remarks>Faster than regular distance because it does not involve
+        /// and square-root function.</remarks>
+        /// <param name="fromPoint">From point.</param>
+        /// <param name="toPoint">To point.</param>
+        public static double DistanceSquared(Vector2 fromPoint, Vector2 toPoint)
+            => (toPoint-fromPoint).SumSquares();
 
         /// <summary>
         /// Get the direction vector between two points.
@@ -144,6 +163,20 @@ namespace JA.Numerics
         public static Vector2 Cross(double a, Vector2 b)
             => Cross(b, -a);
 
+        /// <summary>Performs a linear interpolation between two vectors based on the given weighting.</summary>
+        /// <param name="value1">The first vector.</param>
+        /// <param name="value2">The second vector.</param>
+        /// <param name="amount">A value between 0 and 1 that indicates the weight of <paramref name="value2" />.</param>
+        /// <returns>The interpolated vector.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector2 Lerp(Vector2 value1, Vector2 value2, double amount)
+        {
+            Vector2 left = value1 * (1 - amount);
+            Vector2 right = value2 * amount;
+            return left + right;
+        }
+
+
         public static Vector2 Transform(Vector2 vector, Rotor2 rotor)
         {
             double cos = 1-2*rotor.Z*rotor.Z;
@@ -181,12 +214,20 @@ namespace JA.Numerics
 
         public override int GetHashCode()
         {
-            return 1768953197 + data.GetHashCode();
+            int hashCode = 1768953197;
+            hashCode=hashCode*-1521134295+data.GetHashCode();
+            return hashCode;
         }
         #endregion
 
         #region Collections
+        /// <summary>
+        /// Gets a value indicating whether this array is of fixed size.
+        /// </summary>
         public bool IsReadOnly => true;
+        /// <summary>
+        /// Get the number of elements in the vector.
+        /// </summary>
         public int Count => 2;
 
         public double this[int index]
@@ -202,7 +243,6 @@ namespace JA.Numerics
                 }
             }
         }
-        public bool Contains(double item) => throw new NotSupportedException();
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CopyTo(double[] array, int index)
             => ToArray().CopyTo(array, index);
@@ -218,18 +258,19 @@ namespace JA.Numerics
                 return new ReadOnlySpan<double>(ptr, 2);
             }
         }
-        void ICollection<double>.Add(double item) => throw new NotSupportedException();
-        void ICollection<double>.Clear() => throw new NotSupportedException();
-        bool ICollection<double>.Remove(double item) => throw new NotSupportedException();
-        object System.Collections.ICollection.SyncRoot { get => null; }
-        bool System.Collections.ICollection.IsSynchronized { get => false; }
         public System.Collections.IEnumerator GetEnumerator() => ToArray().GetEnumerator();
-        public System.Collections.Generic.IEnumerable<double> AsEnumerable() => this as System.Collections.Generic.IEnumerable<double>;
-        System.Collections.Generic.IEnumerator<double> System.Collections.Generic.IEnumerable<double>.GetEnumerator()
+        public IEnumerable<double> AsEnumerable() => this as IEnumerable<double>;
+        IEnumerator<double> IEnumerable<double>.GetEnumerator()
         {
             yield return data.x;
             yield return data.y;
         }
+        void ICollection<double>.Add(double item) => throw new NotSupportedException();
+        void ICollection<double>.Clear() => throw new NotSupportedException();
+        bool ICollection<double>.Remove(double item) => throw new NotSupportedException();
+        bool ICollection<double>.Contains(double item) => throw new NotSupportedException();
+        object System.Collections.ICollection.SyncRoot { get => null; }
+        bool System.Collections.ICollection.IsSynchronized { get => false; }
         #endregion
 
         #region Formatting

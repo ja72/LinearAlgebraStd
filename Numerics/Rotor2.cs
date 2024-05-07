@@ -6,11 +6,11 @@ namespace JA.Numerics
 {
     public readonly struct Rotor2 : IEquatable<Rotor2>
     {
-        readonly (double v_z, double s) _data;
+        readonly (double z, double w) _data;
 
-        public Rotor2(double v_z, double s) : this()
+        public Rotor2(double z, double w) : this()
         {
-            _data = (v_z, s);
+            _data = (z, w);
         }
 
         public static Rotor2 Zero { get; } = new Rotor2(0, 0);
@@ -20,22 +20,22 @@ namespace JA.Numerics
         public static Rotor2 CreateRotation(double angle)
             => new Rotor2((double)Math.Sin(angle / 2), (double)Math.Cos(angle / 2));
 
-        public double Z { get => _data.v_z; }
-        public double W { get => _data.s; }
+        public double Z { get => _data.z; }
+        public double W { get => _data.w; }
 
         public double Magnitude => SumSquares;
-        public double SumSquares => _data.v_z * _data.v_z + _data.s * _data.s;
+        public double SumSquares => _data.z * _data.z + _data.w * _data.w;
 
-        public bool IsVector => _data.s == 0;
+        public bool IsVector => _data.w == 0;
 
-        //public double Angle => Math.PI - 2 * Math.Asin((float)_data.s);
-        public double Angle => (float)_data.s != 1 ? 2*Math.Atan(_data.v_z/_data.s) : Math.Sin(_data.s)*Math.PI/2;
-        public double Axis => IsVector ? _data.v_z : 1;
+        //public double Angle => Math.PI - 2 * Math.Asin((float)_data.w);
+        public double Angle => (float)_data.w != 1 ? 2*Math.Atan(_data.z/_data.w) : Math.Sin(_data.w)*Math.PI/2;
+        public double Axis => IsVector ? _data.z : 1;
 
         public Matrix2 ToRotation()
         {
-            double cos = 1-2*_data.v_z*_data.v_z;
-            double sin = 2*_data.s*_data.v_z;
+            double cos = 1-2*_data.z*_data.z;
+            double sin = 2*_data.w*_data.z;
             return new Matrix2(cos, -sin, sin, cos);
         }
 
@@ -49,13 +49,13 @@ namespace JA.Numerics
             return UnitZ;
         }
 
-        public Rotor2 Conjugate() => new Rotor2(-_data.v_z, _data.s);
+        public Rotor2 Conjugate() => new Rotor2(-_data.z, _data.w);
         public Rotor2 Invert() => Conjugate() / SumSquares;
 
         public Vector2 Rotate(Vector2 vector)
         {
             double m2 = SumSquares;
-            double v2 = _data.v_z * _data.v_z, s2 = _data.s * _data.v_z;
+            double v2 = _data.z * _data.z, s2 = _data.w * _data.z;
             double cos = 1 - 2 * v2 / m2;
             double sin = 2 * s2 / m2;
             return new Vector2(
@@ -63,8 +63,8 @@ namespace JA.Numerics
                 sin * vector.X + cos * vector.Y);
         }
 
-        public Rotor2 Rate(double ω) => new Rotor2(_data.s * ω / 2, _data.v_z * ω / 2);
-        public double Omega(Rotor2 rate) => 2 * (_data.s * rate._data.v_z - _data.v_z * rate._data.s);
+        public Rotor2 Rate(double ω) => new Rotor2(_data.w * ω / 2, _data.z * ω / 2);
+        public double Omega(Rotor2 rate) => 2 * (_data.w * rate._data.z - _data.z * rate._data.w);
 
         public static Rotor2 Slerp(Rotor2 rotor_1, Rotor2 rotor_2, double amount)
         {
@@ -97,7 +97,7 @@ namespace JA.Numerics
         #region Formatting
         public string ToString(string formatting, IFormatProvider provider)
         {
-            return $"({_data.v_z} k_|{_data.s})";
+            return $"({_data.z} k_|{_data.w})";
         }
         public string ToString(string formatting)
             => ToString(formatting, null);
@@ -109,28 +109,28 @@ namespace JA.Numerics
         #region Algebra
         public static Rotor2 Negate(Rotor2 a)
             => new Rotor2(
-                -a._data.v_z,
-                -a._data.s);
+                -a._data.z,
+                -a._data.w);
         public static Rotor2 Scale(double factor, Rotor2 a)
             => new Rotor2(
-                factor * a._data.v_z,
-                factor * a._data.s);
+                factor * a._data.z,
+                factor * a._data.w);
         public static Rotor2 Add(Rotor2 a, Rotor2 b)
             => new Rotor2(
-                a._data.v_z + b._data.v_z,
-                a._data.s + b._data.s);
+                a._data.z + b._data.z,
+                a._data.w + b._data.w);
         public static Rotor2 Subtract(Rotor2 a, Rotor2 b)
             => new Rotor2(
-                a._data.v_z - b._data.v_z,
-                a._data.s - b._data.s);
+                a._data.z - b._data.z,
+                a._data.w - b._data.w);
         public static Rotor2 Product(Rotor2 a, Rotor2 b)
             => new Rotor2(
-                a._data.s * b._data.v_z + a._data.v_z * b._data.s,
-                a._data.s * b._data.s - a._data.v_z * b._data.v_z);
+                a._data.w * b._data.z + a._data.z * b._data.w,
+                a._data.w * b._data.w - a._data.z * b._data.z);
         public static Rotor2 Dot(Rotor2 a, Rotor2 b)
             => new Rotor2(
-                a._data.s * b._data.v_z + a._data.v_z * b._data.s,
-                a._data.s * b._data.s - a._data.v_z * b._data.v_z);
+                a._data.w * b._data.z + a._data.z * b._data.w,
+                a._data.w * b._data.w - a._data.z * b._data.z);
         public static Rotor2 Cross(Rotor2 a, Rotor2 b) => Zero;
 
         public static Rotor2 operator +(Rotor2 a, Rotor2 b) => Add(a, b);

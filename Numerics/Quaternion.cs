@@ -12,17 +12,14 @@ using System.Runtime.CompilerServices;
 namespace JA.Numerics
 {
     /// <summary>Represents a vector that is used to encode three-dimensional physical rotations.</summary>
-    public struct Quaternion :
+    public readonly struct Quaternion :
         IEquatable<Quaternion>,
         IReadOnlyList<double>,
         ICollection<double>,
         System.Collections.ICollection,
         IFormattable
     {
-        readonly double _x;
-        readonly double _y;
-        readonly double _z;
-        readonly double _w;
+        readonly (double x, double y, double z, double w) data;
 
         #region Factory
         /// <summary>Constructs a quaternion from the specified components.</summary>
@@ -32,10 +29,7 @@ namespace JA.Numerics
         /// <param name="w">The value to assign to the W component of the quaternion.</param>
         public Quaternion(double x, double y, double z, double w)
         {
-            this._x = x;
-            this._y = y;
-            this._z = z;
-            this._w = w;
+            data = (x, y, z, w);
         }
 
         /// <summary>Creates a quaternion from the specified vector and rotation parts.</summary>
@@ -43,10 +37,10 @@ namespace JA.Numerics
         /// <param name="scalarPart">The rotation part of the quaternion.</param>
         public Quaternion(Vector3 vectorPart, double scalarPart)
         {
-            this._x = vectorPart.X;
-            this._y = vectorPart.Y;
-            this._z = vectorPart.Z;
-            this._w = scalarPart;
+            this.data.x = vectorPart.X;
+            this.data.y = vectorPart.Y;
+            this.data.z = vectorPart.Z;
+            this.data.w = scalarPart;
         }
         /// <summary>Gets a quaternion that represents no rotation.</summary>
         /// <returns>A quaternion whose values are <c>(0, 0, 0, 1)</c>.</returns>
@@ -55,51 +49,57 @@ namespace JA.Numerics
 
         public static implicit operator Quaternion(System.Numerics.Quaternion quaternion)
             => new Quaternion(quaternion.X, quaternion.Y, quaternion.Z, quaternion.W);
-        public static implicit operator System.Numerics.Quaternion(Quaternion quaternion)
+        public static explicit operator System.Numerics.Quaternion(Quaternion quaternion)
             => new System.Numerics.Quaternion((float)quaternion.X, (float)quaternion.Y, (float)quaternion.Z, (float)quaternion.W);
         #endregion
 
         #region Properties
         /// <summary>The X value of the vector component of the quaternion.</summary>
-        public double X => _x;
+        public double X => data.x;
         /// <summary>The Y value of the vector component of the quaternion.</summary>
-        public double Y => _y;
+        public double Y => data.y;
         /// <summary>The Z value of the vector component of the quaternion.</summary>
-        public double Z => _z;
+        public double Z => data.z;
         /// <summary>The rotation component of the quaternion.</summary>
-        public double W => _w;
+        public double W => data.w;
 
         public readonly double this[int index] => index switch
         {
-            0 => _x,
-            1 => _y,
-            2 => _z,
-            3 => _w,
+            0 => data.x,
+            1 => data.y,
+            2 => data.z,
+            3 => data.w,
             _ => throw new ArgumentOutOfRangeException(nameof(index)),
         };
 
         /// <summary>Gets a value that indicates whether the current instance is the identity quaternion.</summary>
         /// <returns>
         ///   <see langword="true" /> if the current instance is the identity quaternion; otherwise, <see langword="false" />.</returns>
-        public bool IsIdentity => _x==0 && _y ==0 && _z == 0 && _w==1;
+        public bool IsIdentity => data.x==0 && data.y ==0 && data.z == 0 && data.w==1;
 
 
         /// <summary>Calculates the length of the quaternion.</summary>
         /// <returns>The computed length of the quaternion.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public double Length()
+        public double Magnitude()
         {
-            double magsq = LengthSquared();
+            double magsq = MagnitudeSquared();
             return Math.Sqrt(magsq);
         }
 
         /// <summary>Calculates the squared length of the quaternion.</summary>
         /// <returns>The length squared of the quaternion.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public double LengthSquared()
+        public double MagnitudeSquared()
         {
-            return _x * _x + _y * _y + _z * _z + _w * _w;
+            return data.x * data.x + data.y * data.y + data.z * data.z + data.w * data.w;
         }
+
+        public void Deconstruct(out double x, out double y, out double z, out double w)
+        {
+            (x, y, z, w) = data;
+        }
+
         #endregion
 
         #region Algebra
@@ -610,10 +610,7 @@ namespace JA.Numerics
         public override int GetHashCode()
         {
             var hashCode = -307843816;
-            hashCode=hashCode*-1521134295+_x.GetHashCode();
-            hashCode=hashCode*-1521134295+_y.GetHashCode();
-            hashCode=hashCode*-1521134295+_z.GetHashCode();
-            hashCode=hashCode*-1521134295+_w.GetHashCode();
+            hashCode=hashCode*-1521134295+data.GetHashCode();
             return hashCode;
 
         }
@@ -624,16 +621,16 @@ namespace JA.Numerics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double[] ToArray()
         {
-            return new double[] { _x, _y, _z, _w };
+            return new double[] { data.x, data.y, data.z, data.w };
         }
         public bool Contains(double item) => IndexOf(item)>=0;
         public int IndexOf(double item) => Array.IndexOf(ToArray(), item);
         public IEnumerator<double> GetEnumerator()
         {
-            yield return _x;
-            yield return _y;
-            yield return _z;
-            yield return _w;
+            yield return data.x;
+            yield return data.y;
+            yield return data.z;
+            yield return data.w;
         }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
             => GetEnumerator();
@@ -657,10 +654,10 @@ namespace JA.Numerics
         public string ToString(string formatting) => ToString(formatting, null);
         public string ToString(string formatting, IFormatProvider formatProvider)
         {
-            string x = _x.ToString(formatting, formatProvider);
-            string y = _y.ToString(formatting, formatProvider);
-            string z = _z.ToString(formatting, formatProvider);
-            string w = _w.ToString(formatting, formatProvider);
+            string x = data.x.ToString(formatting, formatProvider);
+            string y = data.y.ToString(formatting, formatProvider);
+            string z = data.z.ToString(formatting, formatProvider);
+            string w = data.w.ToString(formatting, formatProvider);
             return $"{{{x},{y},{z}|{w}}}";
         }
 
