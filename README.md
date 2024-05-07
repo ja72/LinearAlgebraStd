@@ -27,4 +27,4 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- MARKDOWN LINKS & IMAGES -->
 [license-url]: https://github.com/ja72/LinearAlgebraStd/blob/master/LICENSE.txt
 [license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
-[product-screenshot]: https://github.com/ja72/LinearAlgebraStd\LinearAlgebraConsole\2024-05-07_16_09_50-cmd.png
+[product-screenshot]: https://github.com/ja72/LinearAlgebraStd/blob/master/LinearAlgebraConsole/2024-05-07_16_09_50-cmd.png
