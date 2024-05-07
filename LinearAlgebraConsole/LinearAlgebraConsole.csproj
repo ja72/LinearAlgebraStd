@@ -55,5 +55,8 @@
       <Name>LinearAlgebraStd</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="2024-05-07_16_09_50-cmd.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
