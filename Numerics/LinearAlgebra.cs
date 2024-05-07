@@ -11,6 +11,10 @@ namespace JA.Numerics
     {
         X, Y
     }
+    public enum Axis3
+    {
+        X, Y, Z
+    }
 
     public static class LinearAlgebra
     {
